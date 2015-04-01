@@ -11,6 +11,7 @@ const rootHtml = `<!DOCTYPE html>
   <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Lanky</title>
 	<link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
 	<style>
 	html {
@@ -49,7 +50,7 @@ const rootHtml = `<!DOCTYPE html>
 	<h1>Lanky</h1>
 	<ul>
 	{{range .Project}}
-	<li><a href="{{.WebUrl}}{{.LastBuildLabel}}/console">{{.BuildTime}} - {{.Name}} (#{{.LastBuildLabel}})</a> 
+	<li><a href="{{.ConsoleUrl}}">{{.BuildTime}} - {{.Name}} (#{{.LastBuildLabel}})</a>
 	{{end}}
 	</ul>
 	</body>
@@ -57,10 +58,10 @@ const rootHtml = `<!DOCTYPE html>
 
 var rootTemplate = template.Must(template.New("root").Parse(rootHtml))
 
-func rootHandler(w http.ResponseWriter, r *http.Request, config *Config) {
+func rootHandler(w http.ResponseWriter, r *http.Request, config *Config) error {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
-		return
+		return nil
 	}
 
 	client := http.Client{
@@ -70,23 +71,22 @@ func rootHandler(w http.ResponseWriter, r *http.Request, config *Config) {
 
 	resp, err := client.Get(config.JenkinsUrl + "/cc.xml")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	p := &Projects{}
-	defer resp.Body.Close()
 	err = ReadTrayFeed(resp.Body, p)
+	resp.Body.Close()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	err = rootTemplate.Execute(w, p)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
+
+	return nil
 }
 
 func builderHandler(w http.ResponseWriter, r *http.Request, config *Config) {

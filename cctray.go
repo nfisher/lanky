@@ -19,6 +19,10 @@ func (p *Project) BuildTime() string {
 	return p.LastBuildTime.Format("2006-01-02 15:04")
 }
 
+func (p *Project) ConsoleUrl() string {
+	return p.WebUrl + p.LastBuildLabel + "/console"
+}
+
 type Projects struct {
 	XMLName xml.Name `xml:"Projects"`
 	Project []Project

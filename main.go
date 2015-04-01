@@ -79,7 +79,10 @@ func serve(config *Config) {
 
 	// landing page
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		rootHandler(w, r, config)
+		err := rootHandler(w, r, config)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
 
 	log.Printf("Starting server listening at %v.", config.Address)
