@@ -49,7 +49,7 @@ const rootHtml = `<!DOCTYPE html>
 	<h1>Lanky</h1>
 	<ul>
 	{{range .Project}}
-	<li><a href="{{.WebUrl}}{{.LastBuildLabel}}/console">{{.BuildTime}} - {{.Name}}</a> 
+	<li><a href="{{.WebUrl}}{{.LastBuildLabel}}/console">{{.BuildTime}} - {{.Name}} (#{{.LastBuildLabel}})</a> 
 	{{end}}
 	</ul>
 	</body>
@@ -58,8 +58,13 @@ const rootHtml = `<!DOCTYPE html>
 var rootTemplate = template.Must(template.New("root").Parse(rootHtml))
 
 func rootHandler(w http.ResponseWriter, r *http.Request, config *Config) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
 	client := http.Client{
-		// TODO: Should probably make this configurable via the config.
+		// TODO: (NF 2014-04-01) Should probably make this configurable via the config.
 		Timeout: time.Duration(5 * time.Second),
 	}
 
@@ -82,4 +87,16 @@ func rootHandler(w http.ResponseWriter, r *http.Request, config *Config) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func builderHandler(w http.ResponseWriter, r *http.Request, config *Config) {
+	http.Error(w, "Not implemented yet", http.StatusInternalServerError)
+}
+
+func githubHandler(w http.ResponseWriter, r *http.Request, config *Config) {
+	http.Error(w, "Not implemented yet", http.StatusInternalServerError)
+}
+
+func hubotHandler(w http.ResponseWriter, r *http.Request, config *Config) {
+	http.Error(w, "Not implemented yet", http.StatusInternalServerError)
 }
