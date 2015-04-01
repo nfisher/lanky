@@ -41,6 +41,12 @@ const rootHtml = `<!DOCTYPE html>
 		text-decoration:none;
 		text-indent:1rem;
 	}
+	.Success a {
+		background:#7FFF00;
+	}
+	.Failure a {
+		background:#E47297;
+	}
 	a:hover {
 		background:#ccc;
 	}
@@ -50,7 +56,7 @@ const rootHtml = `<!DOCTYPE html>
 	<h1>Lanky</h1>
 	<ul>
 	{{range .Project}}
-	<li><a href="{{.ConsoleUrl}}">{{.BuildTime}} - {{.Name}} (#{{.LastBuildLabel}})</a>
+	<li class="{{.LastBuildStatus}}"><a href="{{.ConsoleUrl}}">{{.BuildTime}} - {{.Name}} (#{{.LastBuildLabel}})</a>
 	{{end}}
 	</ul>
 	</body>
