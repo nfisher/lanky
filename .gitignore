@@ -1,3 +1,4 @@
 lanky
 tags
 *.sw?
+coverage.out
