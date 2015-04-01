@@ -1,0 +1,4 @@
+{
+   "address": "localhost:9393",
+   "jenkinsUrl": "https://ci.jenkins-ci.org"
+}

@@ -48,3 +48,7 @@ vet:
 .PHONY: install
 install: cov
 	go install
+
+.PHONY: watch
+watch:
+	fswatch --one-per-batch *.go | xargs -n1 -I{} make test
