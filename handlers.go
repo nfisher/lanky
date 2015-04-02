@@ -16,6 +16,58 @@ const githubEventType = "X-GitHub-Event"
 const githubSignature = "X-Hub-Signature"
 const githubSignaturePrefix = "sha1="
 const githubUserAgent = "GitHub-Hookshot/"
+const statusHtml = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Lanky</title>
+	<style>
+	html {
+		font-size:62.5%;
+	}
+	body {
+		font-family: HelveticaNeue, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+		font-size:1.5em;
+		margin:1rem auto;
+		position:relative;
+		width:960px;
+	}
+	ul {
+		margin:0;
+		padding:0;
+	}
+	li {
+		list-style:none;
+		line-height:4rem;
+		height:4rem;
+		margin-bottom:1px;
+	}
+	th {
+		text-align:left;
+	}
+	.number {
+		text-align:right;
+	}
+	.key {
+		min-width:10rem;
+	}
+	</style>
+	</head>
+	<body>
+	<h1>Lanky</h1>
+	<table>
+	<tr><th class=key>Key</th><th>Value</th></tr>
+	<tr><td>Started</td><td>{{.StartDate}}</td></tr>
+	<tr><td>1XX</td><td class=number>{{.Status1xx}}</td></tr>
+	<tr><td>2XX</td><td class=number>{{.Status2xx}}</td></tr>
+	<tr><td>3XX</td><td class=number>{{.Status3xx}}</td></tr>
+	<tr><td>4XX</td><td class=number>{{.Status4xx}}</td></tr>
+	<tr><td>5XX</td><td class=number>{{.Status5xx}}</td></tr>
+	</table>
+	</body>
+</html>`
+
 const rootHtml = `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -73,6 +125,16 @@ const rootHtml = `<!DOCTYPE html>
 </html>`
 
 var rootTemplate = template.Must(template.New("root").Parse(rootHtml))
+var statusTemplate = template.Must(template.New("status").Parse(statusHtml))
+
+func statusHandler(w http.ResponseWriter, r *http.Request, config *Config, stats *RuntimeStats) error {
+	err := statusTemplate.Execute(w, stats)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func rootHandler(w http.ResponseWriter, r *http.Request, config *Config) error {
 	if r.URL.Path != "/" {
