@@ -86,5 +86,21 @@ func Serve(config *Config) {
 	})
 
 	log.Printf("Starting server listening at %v.", config.Address)
-	log.Fatal(http.ListenAndServe(config.Address, &LoggingHandler{http.DefaultServeMux}))
+
+	handler := &LoggingHandler{http.DefaultServeMux}
+	address := config.Address
+	cert := config.CertificatePath
+	key := config.KeyPath
+
+	log.Fatal(ListenAndServe(address, cert, key, handler))
+}
+
+func ListenAndServe(address, cert, key string, handler http.Handler) (err error) {
+	if key != "" && cert != "" {
+		err = http.ListenAndServeTLS(address, cert, key, handler)
+	} else {
+		err = http.ListenAndServe(address, handler)
+	}
+
+	return
 }

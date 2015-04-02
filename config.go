@@ -21,6 +21,8 @@ type Hubot struct {
 type Config struct {
 	Address         string
 	BaseUrl         string
+	CertificatePath string
+	KeyPath         string
 	ChatDefaultRoom string
 	DatabaseUrl     string
 	JenkinsUrl      string
