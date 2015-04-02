@@ -27,7 +27,7 @@ func main() {
 		log.Fatalf("Error reading config file %v: %v", configPath, err)
 	}
 
-	serve(config)
+	Serve(config)
 }
 
 type ByteWriter struct {
@@ -61,7 +61,7 @@ func (lh *LoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v %v - \"%v %v %v\" %v %v", ip, r.Header.Get("User-Agent"), r.Method, r.URL.Path, r.Proto, bw.Status, bw.Wrote)
 }
 
-func serve(config *Config) {
+func Serve(config *Config) {
 	// GitHub Post-Receive requests
 	http.HandleFunc("/_github", func(w http.ResponseWriter, r *http.Request) {
 		githubHandler(w, r, config)
