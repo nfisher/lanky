@@ -5,6 +5,18 @@ import (
 	"io"
 )
 
+type Github struct {
+	User       string
+	Password   string
+	HookSecret string
+	ApiUrl     string
+}
+
+type Hubot struct {
+	User     string
+	Password string
+}
+
 // Lanky run-time configuration.
 type Config struct {
 	Address         string
@@ -13,18 +25,8 @@ type Config struct {
 	DatabaseUrl     string
 	JenkinsUrl      string
 	TemplatesDir    string
-
-	Hubot *struct {
-		User     string
-		Password string
-	}
-
-	Github *struct {
-		User       string
-		Password   string
-		HookSecret string
-		ApiUrl     string
-	}
+	Hubot           *Hubot
+	Github          *Github
 }
 
 func LoadConfig(r io.Reader, c *Config) error {

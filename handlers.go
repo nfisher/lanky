@@ -1,11 +1,21 @@
 package main
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/hex"
+	"fmt"
 	"html/template"
+	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
+const githubEventType = "X-GitHub-Event"
+const githubSignature = "X-Hub-Signature"
+const githubSignaturePrefix = "sha1="
+const githubUserAgent = "GitHub-Hookshot/"
 const rootHtml = `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -45,7 +55,7 @@ const rootHtml = `<!DOCTYPE html>
 		background:#7FFF00;
 	}
 	.Failure a {
-		background:#E47297;
+		background:#B2123F;
 	}
 	a:hover {
 		background:#ccc;
@@ -99,8 +109,60 @@ func builderHandler(w http.ResponseWriter, r *http.Request, config *Config) {
 	http.Error(w, "Not implemented yet", http.StatusInternalServerError)
 }
 
+func sign(payload []byte, key string) []byte {
+	mac := hmac.New(sha1.New, []byte(key))
+	mac.Write(payload)
+	return mac.Sum(nil)
+}
+
 func githubHandler(w http.ResponseWriter, r *http.Request, config *Config) {
-	http.Error(w, "Not implemented yet", http.StatusInternalServerError)
+	if r.Method != "POST" {
+		http.Error(w, "Unauthorized", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if !strings.HasPrefix(r.UserAgent(), githubUserAgent) {
+		http.Error(w, "Unauthorized.", http.StatusUnauthorized)
+		return
+	}
+
+	signatureHeader := r.Header.Get(githubSignature)
+	if !strings.HasPrefix(signatureHeader, githubSignaturePrefix) {
+		http.Error(w, "Invalid signature.", http.StatusBadRequest)
+		return
+	}
+
+	reqSignature, err := hex.DecodeString(signatureHeader[len(githubSignaturePrefix):])
+	if err != nil {
+		http.Error(w, "Invalid signature.", http.StatusBadRequest)
+		return
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	r.Body.Close()
+	if err != nil {
+		http.Error(w, "Unable to read message body.", http.StatusInternalServerError)
+		return
+	}
+
+	localSignature := sign(body, config.Github.HookSecret)
+	if !hmac.Equal(localSignature, reqSignature) {
+		http.Error(w, "Invalid signature.", http.StatusBadRequest)
+		return
+	}
+
+	event := r.Header.Get(githubEventType)
+	switch event {
+	case "push":
+		http.Error(w, "Not implemented yet", http.StatusInternalServerError)
+		return
+	case "ping":
+		fmt.Fprint(w, "OK: 1")
+		return
+	}
+
+	http.Error(w, "Invalid event type specified.", http.StatusBadRequest)
+	return
 }
 
 func hubotHandler(w http.ResponseWriter, r *http.Request, config *Config) {
