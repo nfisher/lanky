@@ -363,6 +363,6 @@ func Test_should_process_valid_ping_correctly(t *testing.T) {
 
 	var expectedUrl Url = "https://api.github.com/repos/hailocab/releases-web/hooks/4314541"
 	if gp.Hook.Url != expectedUrl {
-		t.Fatal("gp.Hook.Url = %v, want %v", gp.Hook.Url, expectedUrl)
+		t.Fatalf("gp.Hook.Url = %v, want %v", gp.Hook.Url, expectedUrl)
 	}
 }

@@ -12,7 +12,7 @@ import (
 func Test_githubHandler_should_fail_if_not_post(t *testing.T) {
 	req, err := http.NewRequest("GET", "http://localhost:9393/_github", nil)
 	if err != nil {
-		t.Fatal("err = %v, want nil", err)
+		t.Fatalf("err = %v, want nil", err)
 	}
 	w := httptest.NewRecorder()
 	config := &Config{}
@@ -26,7 +26,7 @@ func Test_githubHandler_should_fail_if_not_post(t *testing.T) {
 func Test_githubHandler_should_fail_if_not_correct_user_agent(t *testing.T) {
 	req, err := http.NewRequest("POST", "http://localhost:9393/_github", nil)
 	if err != nil {
-		t.Fatal("err = %v, want nil", err)
+		t.Fatalf("err = %v, want nil", err)
 	}
 
 	w := httptest.NewRecorder()
@@ -54,7 +54,7 @@ func Test_githubHandler_should_fail_if_hmac_signature_is_invalid(t *testing.T) {
 
 	req, err := newRequest(r, "junk")
 	if err != nil {
-		t.Fatal("err = %v, want nil", err)
+		t.Fatalf("err = %v, want nil", err)
 	}
 
 	w := httptest.NewRecorder()
@@ -72,7 +72,7 @@ func Test_githubHandler_should_fail_if_hmac_signature_is_invalid_hex_encoding(t 
 
 	req, err := newRequest(r, "sha1=abc12")
 	if err != nil {
-		t.Fatal("err = %v, want nil", err)
+		t.Fatalf("err = %v, want nil", err)
 	}
 
 	w := httptest.NewRecorder()
@@ -96,7 +96,7 @@ func Test_githubHandler_should_fail_if_hmac_signature_is_signed_incorrectly(t *t
 
 	req, err := newRequest(r, "sha1="+sig)
 	if err != nil {
-		t.Fatal("err = %v, want nil", err)
+		t.Fatalf("err = %v, want nil", err)
 	}
 
 	w := httptest.NewRecorder()
@@ -124,7 +124,7 @@ func Test_githubHandler_should_fail_if_event_type_absent(t *testing.T) {
 
 	req, err := newRequest(r, "sha1="+sig)
 	if err != nil {
-		t.Fatal("err = %v, want nil", err)
+		t.Fatalf("err = %v, want nil", err)
 	}
 
 	w := httptest.NewRecorder()
@@ -152,7 +152,7 @@ func Test_githubHandler_should_fail_if_event_type_invalid(t *testing.T) {
 
 	req, err := newRequest(r, "sha1="+sig)
 	if err != nil {
-		t.Fatal("err = %v, want nil", err)
+		t.Fatalf("err = %v, want nil", err)
 	}
 	req.Header.Add(githubEventType, "pong")
 
@@ -181,7 +181,7 @@ func Test_githubHandler_should_succeed_with_valid_ping(t *testing.T) {
 
 	req, err := newRequest(r, "sha1="+sig)
 	if err != nil {
-		t.Fatal("err = %v, want nil", err)
+		t.Fatalf("err = %v, want nil", err)
 	}
 	req.Header.Add(githubEventType, "ping")
 
