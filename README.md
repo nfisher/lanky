@@ -8,6 +8,8 @@ A fundamental deviation is that projects registered in jenkins will be tied back
 
 Jenkins Project Name: 
 
-```${GITHUB_REPOSITORY_NAME}-${GITHUB_REPOSITORY_ID}```
+```
+${GITHUB_REPOSITORY_NAME}-${GITHUB_REPOSITORY_ID}
+```
 
 Request payload signatures are verified using the HMAC signing that uses the GitHub secret.
