@@ -1,4 +1,7 @@
 {
-   "address": "localhost:9393",
-   "jenkinsUrl": "https://ci.jenkins-ci.org"
+  "address": "localhost:9393",
+  "jenkins": {
+    "baseUrl": "http://janky.vpn:8080",
+    "trayFeed": "/cc.xml"
+  }
 }

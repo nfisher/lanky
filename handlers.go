@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 )
 
 const githubEventType = "X-GitHub-Event"
@@ -142,19 +141,10 @@ func rootHandler(w http.ResponseWriter, r *http.Request, config *Config) error {
 		return nil
 	}
 
-	client := http.Client{
-		// TODO: (NF 2014-04-01) Should probably make this configurable via the config.
-		Timeout: time.Duration(5 * time.Second),
-	}
-
-	resp, err := client.Get(config.JenkinsUrl + "/cc.xml")
-	if err != nil {
-		return err
-	}
-
 	p := &Projects{}
-	err = ReadTrayFeed(resp.Body, p)
-	resp.Body.Close()
+	j := &JenkinsClient{config}
+
+	err := j.TrayFeed(p)
 	if err != nil {
 		return err
 	}

@@ -7,8 +7,10 @@ import (
 
 const validJson = `{
 	"address": ":9393",
-	"baseUrl": "http://ganky.local:9393/",
-	"jekinsUrl": "http://jenkins.local:8080/",
+	"baseUrl": "http://lanky.local:9393/",
+	"jenkins": {
+		"baseUrl": "http://jenkins.local:8080"
+	},
 	"hubot": {
 		"user": "hubot",
 		"password": "secret"
@@ -22,7 +24,7 @@ const validJson = `{
 
 const invalidJson = `{
 	"address": ":9393"
-	"baseUrl": "http://ganky.local:9393/",
+	"baseUrl": "http://lanky.local:9393/",
 }`
 
 func Test_valid_json(t *testing.T) {
@@ -43,6 +45,11 @@ func Test_valid_json(t *testing.T) {
 	expect = "secret"
 	if c.Hubot.Password != expect {
 		t.Fatalf("c.Hubot.Password = %v, want %v", c.Hubot.Password, expect)
+	}
+
+	expect = "http://jenkins.local:8080"
+	if c.Jenkins.BaseUrl != expect {
+		t.Fatalf("c.Jenkins.BaseUrl = %v, want %v", c.Jenkins.BaseUrl, expect)
 	}
 }
 

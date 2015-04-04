@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"time"
 )
 
 type Github struct {
@@ -17,6 +18,11 @@ type Hubot struct {
 	Password string
 }
 
+type Jenkins struct {
+	BaseUrl  string
+	TrayFeed string
+}
+
 // Lanky run-time configuration.
 type Config struct {
 	Address         string
@@ -25,10 +31,22 @@ type Config struct {
 	KeyPath         string
 	ChatDefaultRoom string
 	DatabaseUrl     string
-	JenkinsUrl      string
 	TemplatesDir    string
+	Jenkins         *Jenkins
 	Hubot           *Hubot
 	Github          *Github
+}
+
+func (c *Config) ClientTimeout() time.Duration {
+	return time.Duration(5 * time.Second)
+}
+
+func (c *Config) TrayFeedUrl() string {
+	if c.Jenkins == nil {
+		return "http://localhost:8080"
+	}
+
+	return c.Jenkins.BaseUrl + c.Jenkins.TrayFeed
 }
 
 func LoadConfig(r io.Reader, c *Config) error {
