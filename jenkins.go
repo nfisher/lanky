@@ -9,11 +9,16 @@ import (
 	"time"
 )
 
+const (
+	orderByDate   = "date"
+	orderByStatus = "status"
+)
+
 type JenkinsClient struct {
 	*Config
 }
 
-func (j *JenkinsClient) TrayFeed(p *Projects) (err error) {
+func (j *JenkinsClient) TrayFeed(p *Projects, by string) (err error) {
 	trayFeedUrl := j.Config.TrayFeedUrl()
 
 	client := http.Client{
@@ -31,7 +36,17 @@ func (j *JenkinsClient) TrayFeed(p *Projects) (err error) {
 		return errors.New(err.Error() + " from " + trayFeedUrl)
 	}
 
-	sort.Sort(ByStatus{p})
+	switch by {
+	case orderByDate:
+		sort.Sort(sort.Reverse(ByDate{p}))
+		p.Order = orderByDate
+		break
+	default:
+		sort.Sort(sort.Reverse(ByDate{p}))
+		sort.Stable(ByStatus{p})
+		p.Order = orderByStatus
+		break
+	}
 
 	return nil
 }
@@ -60,8 +75,10 @@ func (p *Project) ConsoleUrl() string {
 type Projects struct {
 	XMLName xml.Name `xml:"Projects"`
 	Project []Project
+	Order   string
 }
 
+func (p *Projects) ByDate() bool  { return p.Order == orderByDate }
 func (p *Projects) Len() int      { return len(p.Project) }
 func (p *Projects) Swap(i, j int) { p.Project[i], p.Project[j] = p.Project[j], p.Project[i] }
 
@@ -69,6 +86,12 @@ type ByStatus struct{ *Projects }
 
 func (p ByStatus) Less(i, j int) bool {
 	return p.Project[i].LastBuildStatus < p.Project[j].LastBuildStatus
+}
+
+type ByDate struct{ *Projects }
+
+func (p ByDate) Less(i, j int) bool {
+	return p.Project[i].LastBuildTime.Unix() < p.Project[j].LastBuildTime.Unix()
 }
 
 func ReadTrayFeed(r io.Reader, p *Projects) error {

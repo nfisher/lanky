@@ -26,6 +26,7 @@ const statusHtml = `<!DOCTYPE html>
 		font-size:62.5%;
 	}
 	body {
+		color:#222;
 		font-family: HelveticaNeue, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 		font-size:1.5em;
 		margin:1rem auto;
@@ -81,6 +82,7 @@ const rootHtml = `<!DOCTYPE html>
 		font-size:62.5%;
 	}
 	body {
+		color:#222;
 		font-family: Raleway, HelveticaNeue, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 		font-size:1.5em;
 		margin:1rem auto;
@@ -98,9 +100,11 @@ const rootHtml = `<!DOCTYPE html>
 		margin-bottom:1px;
 	}
 	a {
+		color:#1EAEDB;
+	}
+	ul a {
 		background:#eee;
 		display:block;
-		color:#1EAEDB;
 		text-decoration:none;
 		text-indent:1rem;
 	}
@@ -119,6 +123,13 @@ const rootHtml = `<!DOCTYPE html>
 	</head>
 	<body>
 	<h1>Lanky</h1>
+	<p>sort by:
+	{{if .ByDate}}
+	date, <a href="?by=status">status</a>
+	{{else}}
+	<a href="?by=date">date</a>, status
+	{{end}}
+	</p>
 	<ul>
 	{{range .Project}}
 	<li class="{{.LastBuildStatus}}"><a href="{{.ConsoleUrl}}">{{.BuildTime}} - {{.Name}} (#{{.LastBuildLabel}})</a>
@@ -147,8 +158,9 @@ func rootHandler(w http.ResponseWriter, r *http.Request, config *Config) error {
 
 	p := &Projects{}
 	j := &JenkinsClient{config}
+	by := r.URL.Query().Get("by")
 
-	err := j.TrayFeed(p)
+	err := j.TrayFeed(p, by)
 	if err != nil {
 		return err
 	}

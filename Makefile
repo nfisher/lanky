@@ -39,7 +39,7 @@ test:
 
 .PHONY: run
 run: $(EXE)
-	./$(EXE)
+	./$(EXE) -logtostderr
 
 .PHONY: vet
 vet:
