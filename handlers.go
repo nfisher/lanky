@@ -58,6 +58,8 @@ const statusHtml = `<!DOCTYPE html>
 	<table>
 	<tr><th class=key>Key</th><th>Value</th></tr>
 	<tr><td>Started</td><td>{{.StartDate}}</td></tr>
+	<tr><td>Version</td><td class=number>{{.Version}}</td></tr>
+	<tr><td># Goroutines</td><td class=number>{{.NumGoroutine}}</td></tr>
 	<tr><td>1XX</td><td class=number>{{.Status1xx}}</td></tr>
 	<tr><td>2XX</td><td class=number>{{.Status2xx}}</td></tr>
 	<tr><td>3XX</td><td class=number>{{.Status3xx}}</td></tr>
@@ -103,10 +105,12 @@ const rootHtml = `<!DOCTYPE html>
 		text-indent:1rem;
 	}
 	.Success a {
-		background:#7FFF00;
+		background:#517F1A;
+		color:white;
 	}
 	.Failure a {
 		background:#B2123F;
+		color:white;
 	}
 	a:hover {
 		background:#ccc;

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"runtime"
 	"sync/atomic"
 	"time"
 )
@@ -17,6 +18,14 @@ type RuntimeStats struct {
 
 func (rs *RuntimeStats) StartDate() string {
 	return rs.Started.Format("2006-01-02 15:04")
+}
+
+func (rs *RuntimeStats) Version() string {
+	return runtime.Version()
+}
+
+func (rs *RuntimeStats) NumGoroutine() int {
+	return runtime.NumGoroutine()
 }
 
 func (rs *RuntimeStats) inc(addr *uint64) {
