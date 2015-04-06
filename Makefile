@@ -23,7 +23,7 @@ format:
 	go fmt ./...
 
 coverage.out: $(SRC)
-	go test -coverprofile=coverage.out
+	go test -v -covermode=count -coverprofile=coverage.out
 
 .PHONY: cov
 cov: coverage.out
