@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"sort"
@@ -14,20 +15,34 @@ const (
 	orderByStatus = "status"
 )
 
+func NewJenkins(config *Config) (client *JenkinsClient) {
+	wc := &http.Client{
+		Timeout: config.ClientTimeout(),
+	}
+
+	return &JenkinsClient{
+		config,
+		wc,
+	}
+}
+
+type WebClient interface {
+	Get(url string) (resp *http.Response, err error)
+	Post(url string, bodyType string, body io.Reader) (resp *http.Response, err error)
+}
+
 type JenkinsClient struct {
 	*Config
+	WebClient
 }
 
 func (j *JenkinsClient) TrayFeed(p *Projects, by string) (err error) {
 	trayFeedUrl := j.Config.TrayFeedUrl()
 
-	client := http.Client{
-		Timeout: j.Config.ClientTimeout(),
-	}
-
-	resp, err := client.Get(trayFeedUrl)
+	resp, err := j.WebClient.Get(trayFeedUrl)
 	if err != nil {
-		return err
+		msg := fmt.Sprintf("%v with a timeout of %v", err.Error(), j.Config.ClientTimeout())
+		return errors.New(msg)
 	}
 
 	defer resp.Body.Close()
@@ -38,7 +53,8 @@ func (j *JenkinsClient) TrayFeed(p *Projects, by string) (err error) {
 
 	switch by {
 	case orderByDate:
-		sort.Sort(sort.Reverse(ByDate{p}))
+		sort.Sort(ByStatus{p})
+		sort.Stable(sort.Reverse(ByDate{p}))
 		p.Order = orderByDate
 		break
 	default:

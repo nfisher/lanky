@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 )
 
 const githubEventType = "X-GitHub-Event"
@@ -66,6 +68,10 @@ const statusHtml = `<!DOCTYPE html>
 	<tr><td>3XX</td><td class=number>{{.Status3xx}}</td></tr>
 	<tr><td>4XX</td><td class=number>{{.Status4xx}}</td></tr>
 	<tr><td>5XX</td><td class=number>{{.Status5xx}}</td></tr>
+	<tr><td>Bytes from System</td><td class=number>{{.Sys}}</td></tr>
+	<tr><td>Heap in Use</td><td class=number>{{.HeapInuse}}</td></tr>
+	<tr><td>Heap System</td><td class=number>{{.HeapSys}}</td></tr>
+	<tr><td>Total Allocation</td><td class=number>{{.TotalAlloc}}</td></tr>
 	</table>
 	</body>
 </html>`
@@ -123,7 +129,7 @@ const rootHtml = `<!DOCTYPE html>
 	</head>
 	<body>
 	<h1>Lanky</h1>
-	<p>sort by:
+	<p>Last {{.Len}} builds sorted by:
 	{{if .ByDate}}
 	date, <a href="?by=status">status</a>
 	{{else}}
@@ -138,10 +144,63 @@ const rootHtml = `<!DOCTYPE html>
 	</body>
 </html>`
 
+const repositoryHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lanky</title>
+<link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+<style>
+html {
+	font-size:62.5%;
+}
+body {
+	color:#222;
+	font-family: Raleway, HelveticaNeue, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	font-size:1.5em;
+	margin:1rem auto;
+	position:relative;
+	width:960px;
+}
+ul {
+	margin:0;
+	padding:0;
+}
+li {
+	list-style:none;
+	line-height:4rem;
+	height:4rem;
+	margin-bottom:1px;
+}
+a {
+	color:#1EAEDB;
+}
+ul a {
+	background:#eee;
+	display:block;
+	text-decoration:none;
+	text-indent:1rem;
+}
+</style>
+</head>
+<body>
+<h1>Lanky</h1>
+<p>{{.Len}} respositories.</p>
+<ul>
+{{range .}}
+<li>{{.FullName}}
+{{end}}
+</ul>
+</body>
+</html>`
+
 var rootTemplate = template.Must(template.New("root").Parse(rootHtml))
 var statusTemplate = template.Must(template.New("status").Parse(statusHtml))
+var repositoryTemplate = template.Must(template.New("repository").Parse(repositoryHtml))
 
 func statusHandler(w http.ResponseWriter, r *http.Request, config *Config, stats *RuntimeStats) error {
+	stats.Update()
 	err := statusTemplate.Execute(w, stats)
 	if err != nil {
 		return err
@@ -157,7 +216,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request, config *Config) error {
 	}
 
 	p := &Projects{}
-	j := &JenkinsClient{config}
+	j := NewJenkins(config)
 	by := r.URL.Query().Get("by")
 
 	err := j.TrayFeed(p, by)
@@ -235,4 +294,41 @@ func githubHandler(w http.ResponseWriter, r *http.Request, config *Config) {
 
 func hubotHandler(w http.ResponseWriter, r *http.Request, config *Config) {
 	http.Error(w, "Not implemented yet", http.StatusInternalServerError)
+}
+
+var repos *Repositories = new(Repositories)
+var lastUpdated time.Time
+var reposSync sync.Mutex
+var reposSwap sync.RWMutex
+
+func repositoryHandler(w http.ResponseWriter, r *http.Request, config *Config) (err error) {
+	cl := NewGithub(config)
+
+	if r.URL.Query().Get("update") == "now" {
+		reposSync.Lock()
+		defer reposSync.Unlock()
+		now := time.Now()
+		reps := make(Repositories, 0, 100)
+		if now.After(lastUpdated.Add(5 * time.Minute)) {
+			err = cl.Repositories(config.Github.Organization, &reps)
+			if err != nil {
+				return err
+			}
+
+			lastUpdated = time.Now()
+
+			reposSwap.Lock()
+			repos = &reps
+			reposSwap.Unlock()
+		}
+	}
+
+	reposSwap.RLock()
+	err = repositoryTemplate.Execute(w, *repos)
+	reposSwap.RUnlock()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

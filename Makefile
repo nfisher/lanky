@@ -39,7 +39,7 @@ test:
 
 .PHONY: run
 run: $(EXE)
-	./$(EXE) -logtostderr
+	./$(EXE) -config=lankydev.json -logtostderr
 
 .PHONY: vet
 vet:

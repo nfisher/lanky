@@ -2,3 +2,4 @@ lanky
 tags
 *.sw?
 coverage.out
+/lankydev.json

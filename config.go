@@ -7,10 +7,14 @@ import (
 )
 
 type Github struct {
-	User       string
-	Password   string
-	HookSecret string
-	ApiUrl     string
+	ClientId     string
+	ClientSecret string
+	Token        string
+	User         string
+	Password     string
+	HookSecret   string
+	ApiUrl       string
+	Organization string
 }
 
 type Hubot struct {

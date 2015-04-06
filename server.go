@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	_ "net/http/pprof"
 	"strings"
 
 	"github.com/golang/glog"
@@ -61,6 +62,13 @@ func Serve(config *Config) {
 	// landing page
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		err := rootHandler(w, r, config)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	http.HandleFunc("/repositories", func(w http.ResponseWriter, r *http.Request) {
+		err := repositoryHandler(w, r, config)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

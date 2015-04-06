@@ -366,3 +366,26 @@ func Test_should_process_valid_ping_correctly(t *testing.T) {
 		t.Fatalf("gp.Hook.Url = %v, want %v", gp.Hook.Url, expectedUrl)
 	}
 }
+
+const validNextPageHeader = `<https://api.github.com/organizations/560650/repos?per_page=100&page=2>; rel="next", <https://api.github.com/organizations/560650/repos?per_page=100&page=8>; rel="last"`
+
+var pagination = []struct {
+	rel      string
+	expected string
+}{
+	{"next", "https://api.github.com/organizations/560650/repos?per_page=100&page=2"},
+	{"last", "https://api.github.com/organizations/560650/repos?per_page=100&page=8"},
+	{"first", ""},
+}
+
+func Test_Pagination(t *testing.T) {
+	gc := &GithubClient{}
+
+	for _, tt := range pagination {
+		actual := gc.Pagination(validNextPageHeader, tt.rel)
+
+		if actual != tt.expected {
+			t.Fatalf("gc.Pagination(header,\"%v\") = %v, want %v", tt.rel, actual, tt.expected)
+		}
+	}
+}
