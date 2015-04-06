@@ -1,8 +1,8 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"math"
 	"runtime"
 	"sync"
@@ -37,27 +37,27 @@ func (rs *RuntimeStats) inc(addr *uint64) {
 	atomic.AddUint64(addr, 1)
 }
 
-func (rs *RuntimeStats) IncStatus(code int) {
+func (rs *RuntimeStats) IncStatus(code int) error {
 	codeClass := code / 100
 	switch codeClass {
 	case 1:
 		rs.Inc1xx()
-		return
+		return nil
 	case 2:
 		rs.Inc2xx()
-		return
+		return nil
 	case 3:
 		rs.Inc3xx()
-		return
+		return nil
 	case 4:
 		rs.Inc4xx()
-		return
+		return nil
 	case 5:
 		rs.Inc5xx()
-		return
+		return nil
 	}
 
-	log.Fatalf("Unexpected response code %v.", code)
+	return errors.New(fmt.Sprintf("Unexpected response code %v.", code))
 }
 
 func (rs *RuntimeStats) Inc1xx() { rs.inc(&rs.status1xx) }

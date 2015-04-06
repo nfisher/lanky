@@ -38,7 +38,10 @@ func (lh *LoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ip := strings.Split(r.RemoteAddr, ":")[0]
 	if r.URL.Path != "/status" {
-		lh.RuntimeStats.IncStatus(bw.Status)
+		err := lh.RuntimeStats.IncStatus(bw.Status)
+		if err != nil {
+			glog.Error(err.Error())
+		}
 	}
 	glog.Infof("%v %v - \"%v %v %v\" %v %v", ip, r.Header.Get("User-Agent"), r.Method, r.URL.Path, r.Proto, bw.Status, bw.Wrote)
 }
@@ -85,7 +88,7 @@ func Serve(config *Config) {
 	cert := config.CertificatePath
 	key := config.KeyPath
 
-	glog.Infof("Starting server listening at %v.", config.Address)
+	glog.Warningf("Starting server listening at %v.", config.Address)
 	glog.Fatal(ListenAndServe(address, cert, key, handler))
 }
 
