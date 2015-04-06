@@ -194,7 +194,7 @@ type GithubPingPayload struct {
 }
 
 func NewGithub(config *Config) (client *GithubClient) {
-	if config.Github == nil {
+	if config == nil || config.Github == nil || config.Github.Token == "" {
 		return nil
 	}
 

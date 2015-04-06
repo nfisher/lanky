@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -303,6 +304,9 @@ var reposSwap sync.RWMutex
 
 func repositoryHandler(w http.ResponseWriter, r *http.Request, config *Config) (err error) {
 	cl := NewGithub(config)
+	if cl == nil {
+		return errors.New("Github configuration is invalid.")
+	}
 
 	if r.URL.Query().Get("update") == "now" {
 		reposSync.Lock()

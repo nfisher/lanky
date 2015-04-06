@@ -389,3 +389,28 @@ func Test_Pagination(t *testing.T) {
 		}
 	}
 }
+
+var githubConfigTable = []struct {
+	config *Config
+}{
+	{nil},
+	{&Config{}},
+	{&Config{Github: &Github{Token: ""}}},
+}
+
+func Test_NewGithub_with_invalid_config(t *testing.T) {
+	for _, tt := range githubConfigTable {
+		gc := NewGithub(tt.config)
+		if gc != nil {
+			t.Fatalf("NewGithub(%v) = %v, want nil", tt.config, gc)
+		}
+	}
+}
+
+func Test_NewGithub_with_valid_token(t *testing.T) {
+	config := &Config{Github: &Github{Token: "secret"}}
+	gc := NewGithub(config)
+	if gc == nil {
+		t.Fatalf("NewGithub(%v) = nil, want &GithubClient{}", config)
+	}
+}
