@@ -1,6 +1,7 @@
 # Lanky
 
 [![Build Status](https://travis-ci.org/nfisher/lanky.svg)](https://travis-ci.org/nfisher/lanky)
+[![Coverage Status](https://coveralls.io/repos/nfisher/lanky/badge.svg)](https://coveralls.io/r/nfisher/lanky)
 
 The thinner faster younger brother of Janky. The primary goal of this version is to make it as stateless as possible while minimising the dependencies on the server its deployed to as well.
 
