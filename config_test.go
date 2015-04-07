@@ -73,3 +73,11 @@ func Test_nil_config_returns_error(t *testing.T) {
 		t.Fatal("err == nil, want error")
 	}
 }
+
+func Test_TrayFeedUrl_returns_empty_if_Jenkins_is_nil(t *testing.T) {
+	c := &Config{}
+
+	if c.TrayFeedUrl() != "" {
+		t.Fatalf("c.TrayFeedUrl() = %v, want \"\"", c.TrayFeedUrl())
+	}
+}

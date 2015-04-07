@@ -47,7 +47,7 @@ func (c *Config) ClientTimeout() time.Duration {
 
 func (c *Config) TrayFeedUrl() string {
 	if c.Jenkins == nil {
-		return "http://localhost:8080"
+		return ""
 	}
 
 	return c.Jenkins.BaseUrl + c.Jenkins.TrayFeed

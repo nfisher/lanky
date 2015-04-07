@@ -241,7 +241,44 @@ const (
 	linkHeader = "Link"
 )
 
-func (gc *GithubClient) Repositories(org string, repos *Repositories) (err error) {
+type Hook struct {
+	Id      int
+	Url     Url
+	TestUrl Url `json:"test_url"`
+	PingUrl Url `json:"ping_url"`
+	Name    string
+	Events  []string
+	Active  bool
+	Config  struct {
+		Url         Url
+		ContentType string `json:"content_type"`
+	}
+	UpdatedAt time.Time
+	CreatedAt time.Time
+}
+
+type Hooks []Hook
+
+func (gc *GithubClient) ListHooks(fullName string, hooks *Hooks) (err error) {
+	c := cap(*hooks)
+	hookPath := fmt.Sprintf("https://api.github.com/repos/%v/hooks?per_page=%v", fullName, c)
+
+	resp, err := gc.WebClient.Get(hookPath)
+	if err != nil {
+		return err
+	}
+
+	dec := json.NewDecoder(resp.Body)
+	err = dec.Decode(&hooks)
+	resp.Body.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (gc *GithubClient) ListRepositories(org string, repos *Repositories) (err error) {
 	c := cap(*repos)
 	repoPath := fmt.Sprintf("https://api.github.com/orgs/%v/repos?per_page=%v", org, c)
 	// TODO: (NF 2015-04-05) put a reasonable limit of say 2000 repositories

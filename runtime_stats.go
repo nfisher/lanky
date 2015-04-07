@@ -11,7 +11,7 @@ import (
 )
 
 type RuntimeStats struct {
-	sync.Mutex
+	sync.RWMutex
 	Started   time.Time
 	status1xx uint64
 	status2xx uint64

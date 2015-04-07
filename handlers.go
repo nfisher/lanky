@@ -202,7 +202,9 @@ var repositoryTemplate = template.Must(template.New("repository").Parse(reposito
 
 func statusHandler(w http.ResponseWriter, r *http.Request, config *Config, stats *RuntimeStats) error {
 	stats.Update()
+	stats.RLock()
 	err := statusTemplate.Execute(w, stats)
+	stats.RUnlock()
 	if err != nil {
 		return err
 	}
@@ -314,7 +316,7 @@ func repositoryHandler(w http.ResponseWriter, r *http.Request, config *Config) (
 		now := time.Now()
 		reps := make(Repositories, 0, 100)
 		if now.After(lastUpdated.Add(5 * time.Minute)) {
-			err = cl.Repositories(config.Github.Organization, &reps)
+			err = cl.ListRepositories(config.Github.Organization, &reps)
 			if err != nil {
 				return err
 			}
