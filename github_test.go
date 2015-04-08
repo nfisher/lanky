@@ -2,9 +2,33 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
 	"strings"
 	"testing"
 )
+
+const validHookResponse = `[
+  {
+    "id": 1,
+    "url": "https://api.github.com/repos/octocat/Hello-World/hooks/1",
+    "test_url": "https://api.github.com/repos/octocat/Hello-World/hooks/1/test",
+    "ping_url": "https://api.github.com/repos/octocat/Hello-World/hooks/1/pings",
+    "name": "web",
+    "events": [
+      "push",
+      "pull_request"
+    ],
+    "active": true,
+    "config": {
+      "url": "http://example.com/webhook",
+      "content_type": "json"
+    },
+    "updated_at": "2011-09-06T20:39:23Z",
+    "created_at": "2011-09-06T17:26:27Z"
+  }
+]`
 
 const validPushRequst = `{
   "ref": "refs/heads/master",
@@ -412,5 +436,112 @@ func Test_NewGithub_with_valid_token(t *testing.T) {
 	gc := NewGithub(config)
 	if gc == nil {
 		t.Fatalf("NewGithub(%v) = nil, want &GithubClient{}", config)
+	}
+}
+
+type TestClient struct {
+	responses []string
+	urls      []string
+}
+
+func newClient() *TestClient {
+	return &TestClient{
+		responses: make([]string, 0, 8),
+		urls:      make([]string, 0, 8),
+	}
+}
+
+type closer struct {
+	*strings.Reader
+}
+
+func (c *closer) Close() error {
+	return nil
+}
+
+func (tc *TestClient) Get(url string) (*http.Response, error) {
+	if len(tc.responses) > 0 {
+		cur := &closer{strings.NewReader(tc.responses[0])}
+		tc.responses = append(tc.responses[:0], tc.responses[:1]...)
+		resp := &http.Response{
+			Body: cur,
+		}
+
+		tc.urls = append(tc.urls, url)
+
+		return resp, nil
+	}
+
+	return nil, errors.New("No response specified")
+}
+
+func (tc *TestClient) Post(url string, bodyType string, body io.Reader) (resp *http.Response, err error) {
+	return nil, nil
+}
+
+func Test_ListHooks_with_connection_error_should_return_error(t *testing.T) {
+	tc := newClient()
+
+	gc := &GithubClient{
+		WebClient: tc,
+	}
+
+	hooks := make(Hooks, 0, 10)
+	err := gc.ListHooks("octocat/Hello-World", &hooks)
+	if err == nil {
+		t.Fatal("err = nil, want error")
+	}
+}
+
+func Test_ListHooks_with_json_parsing_error_should_return_error(t *testing.T) {
+	tc := newClient()
+	tc.responses = append(tc.responses, validHookResponse[:len(validHookResponse)-2])
+	gc := &GithubClient{
+		WebClient: tc,
+	}
+
+	hooks := make(Hooks, 0, 10)
+	err := gc.ListHooks("octocat/Hello-World", &hooks)
+	if err == nil {
+		t.Fatal("err = nil, want error")
+	}
+
+	expectedMsg := "unexpected EOF"
+	if err.Error() != expectedMsg {
+		t.Fatalf("err.Error() = %v, want %v", err.Error(), expectedMsg)
+	}
+}
+
+func Test_ListHooks_with_valid_single_response(t *testing.T) {
+	tc := newClient()
+	tc.responses = append(tc.responses, validHookResponse)
+	gc := &GithubClient{
+		WebClient: tc,
+	}
+
+	hooks := make(Hooks, 0, 10)
+	err := gc.ListHooks("octocat/Hello-World", &hooks)
+	if err != nil {
+		t.Fatalf("err = %v, want nil", err)
+	}
+
+	expectedLen := 1
+	if len(tc.urls) != expectedLen {
+		t.Fatalf("len(tc.urls) = %v, want %v", len(tc.urls), expectedLen)
+	}
+
+	expectedUrl := "https://api.github.com/repos/octocat/Hello-World/hooks?per_page=10"
+	if tc.urls[0] != expectedUrl {
+		t.Fatalf("tc.urls[0] = %v, want %v", tc.urls[0], expectedUrl)
+	}
+
+	expectedLen = 1
+	if len(hooks) != expectedLen {
+		t.Fatalf("len(hooks) = %v, want %v", len(hooks), expectedLen)
+	}
+
+	expecedContentType := "json"
+	if hooks[0].Config.ContentType != expecedContentType {
+		t.Fatalf("hooks[0].Config.ContentType = %v, want %v", hooks[0].Config.ContentType, expecedContentType)
 	}
 }
