@@ -50,7 +50,7 @@ func newRequest(r io.Reader, signature string) (*http.Request, error) {
 }
 
 func Test_githubHandler_should_fail_if_hmac_signature_is_invalid(t *testing.T) {
-	r := strings.NewReader(validPingRequest)
+	r := strings.NewReader(validPingResponse)
 
 	req, err := newRequest(r, "junk")
 	if err != nil {
@@ -68,7 +68,7 @@ func Test_githubHandler_should_fail_if_hmac_signature_is_invalid(t *testing.T) {
 }
 
 func Test_githubHandler_should_fail_if_hmac_signature_is_invalid_hex_encoding(t *testing.T) {
-	r := strings.NewReader(validPingRequest)
+	r := strings.NewReader(validPingResponse)
 
 	req, err := newRequest(r, "sha1=abc12")
 	if err != nil {
@@ -91,8 +91,8 @@ func Test_githubHandler_should_fail_if_hmac_signature_is_invalid_hex_encoding(t 
 }
 
 func Test_githubHandler_should_fail_if_hmac_signature_is_signed_incorrectly(t *testing.T) {
-	r := strings.NewReader(validPingRequest)
-	sig := hex.EncodeToString(sign([]byte(validPingRequest), "123abc"))
+	r := strings.NewReader(validPingResponse)
+	sig := hex.EncodeToString(sign([]byte(validPingResponse), "123abc"))
 
 	req, err := newRequest(r, "sha1="+sig)
 	if err != nil {
@@ -119,8 +119,8 @@ func Test_githubHandler_should_fail_if_hmac_signature_is_signed_incorrectly(t *t
 }
 
 func Test_githubHandler_should_fail_if_event_type_absent(t *testing.T) {
-	r := strings.NewReader(validPingRequest)
-	sig := hex.EncodeToString(sign([]byte(validPingRequest), "abc123"))
+	r := strings.NewReader(validPingResponse)
+	sig := hex.EncodeToString(sign([]byte(validPingResponse), "abc123"))
 
 	req, err := newRequest(r, "sha1="+sig)
 	if err != nil {
@@ -147,8 +147,8 @@ func Test_githubHandler_should_fail_if_event_type_absent(t *testing.T) {
 }
 
 func Test_githubHandler_should_fail_if_event_type_invalid(t *testing.T) {
-	r := strings.NewReader(validPingRequest)
-	sig := hex.EncodeToString(sign([]byte(validPingRequest), "abc123"))
+	r := strings.NewReader(validPingResponse)
+	sig := hex.EncodeToString(sign([]byte(validPingResponse), "abc123"))
 
 	req, err := newRequest(r, "sha1="+sig)
 	if err != nil {
@@ -176,8 +176,8 @@ func Test_githubHandler_should_fail_if_event_type_invalid(t *testing.T) {
 }
 
 func Test_githubHandler_should_succeed_with_valid_ping(t *testing.T) {
-	r := strings.NewReader(validPingRequest)
-	sig := hex.EncodeToString(sign([]byte(validPingRequest), "abc123"))
+	r := strings.NewReader(validPingResponse)
+	sig := hex.EncodeToString(sign([]byte(validPingResponse), "abc123"))
 
 	req, err := newRequest(r, "sha1="+sig)
 	if err != nil {

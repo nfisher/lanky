@@ -30,7 +30,64 @@ const validHookResponse = `[
   }
 ]`
 
-const validPushRequst = `{
+const validRepositoriesResponse = `[
+  {
+    "id": 1296269,
+    "owner": {
+      "login": "octocat",
+      "id": 1,
+      "avatar_url": "https://github.com/images/error/octocat_happy.gif",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/octocat",
+      "html_url": "https://github.com/octocat",
+      "followers_url": "https://api.github.com/users/octocat/followers",
+      "following_url": "https://api.github.com/users/octocat/following{/other_user}",
+      "gists_url": "https://api.github.com/users/octocat/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/octocat/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/octocat/subscriptions",
+      "organizations_url": "https://api.github.com/users/octocat/orgs",
+      "repos_url": "https://api.github.com/users/octocat/repos",
+      "events_url": "https://api.github.com/users/octocat/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/octocat/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "name": "Hello-World",
+    "full_name": "octocat/Hello-World",
+    "description": "This your first repo!",
+    "private": false,
+    "fork": false,
+    "url": "https://api.github.com/repos/octocat/Hello-World",
+    "html_url": "https://github.com/octocat/Hello-World",
+    "clone_url": "https://github.com/octocat/Hello-World.git",
+    "git_url": "git://github.com/octocat/Hello-World.git",
+    "ssh_url": "git@github.com:octocat/Hello-World.git",
+    "svn_url": "https://svn.github.com/octocat/Hello-World",
+    "mirror_url": "git://git.example.com/octocat/Hello-World",
+    "homepage": "https://github.com",
+    "language": null,
+    "forks_count": 9,
+    "stargazers_count": 80,
+    "watchers_count": 80,
+    "size": 108,
+    "default_branch": "master",
+    "open_issues_count": 0,
+    "has_issues": true,
+    "has_wiki": true,
+    "has_pages": false,
+    "has_downloads": true,
+    "pushed_at": "2011-01-26T19:06:43Z",
+    "created_at": "2011-01-26T19:01:12Z",
+    "updated_at": "2011-01-26T19:14:43Z",
+    "permissions": {
+      "admin": false,
+      "push": false,
+      "pull": true
+    }
+  }
+]`
+
+const validPushResponse = `{
   "ref": "refs/heads/master",
   "before": "98631d4912c3e4dbad586ea01a00274d364e0745",
   "after": "ebe220cce16e1d9ff50b7bf0de5033ff89c4ed81",
@@ -230,7 +287,7 @@ const validPushRequst = `{
   }
 }`
 
-const validPingRequest = `{
+const validPingResponse = `{
   "zen": "Half measures are as bad as nothing at all.",
   "hook_id": 4314541,
   "hook": {
@@ -365,7 +422,7 @@ const validPingRequest = `{
 }`
 
 func Test_should_process_valid_push_correctly(t *testing.T) {
-	r := strings.NewReader(validPushRequst)
+	r := strings.NewReader(validPushResponse)
 	gp := &GithubPushPayload{}
 
 	dec := json.NewDecoder(r)
@@ -376,7 +433,7 @@ func Test_should_process_valid_push_correctly(t *testing.T) {
 }
 
 func Test_should_process_valid_ping_correctly(t *testing.T) {
-	r := strings.NewReader(validPingRequest)
+	r := strings.NewReader(validPingResponse)
 	gp := &GithubPingPayload{}
 
 	dec := json.NewDecoder(r)
@@ -543,5 +600,61 @@ func Test_ListHooks_with_valid_single_response(t *testing.T) {
 	expecedContentType := "json"
 	if hooks[0].Config.ContentType != expecedContentType {
 		t.Fatalf("hooks[0].Config.ContentType = %v, want %v", hooks[0].Config.ContentType, expecedContentType)
+	}
+}
+
+func Test_ListRepositories_with_connection_error_should_return_error(t *testing.T) {
+	tc := newClient()
+	gc := &GithubClient{
+		WebClient: tc,
+	}
+
+	repos := make(Repositories, 0, 1)
+	err := gc.ListRepositories("hailocab", &repos)
+	if err == nil {
+		t.Fatal("err = nil, want error")
+	}
+}
+
+func Test_ListRepositories_with_invalid_json_response_should_return_error(t *testing.T) {
+	tc := newClient()
+	tc.responses = append(tc.responses, validRepositoriesResponse[:len(validRepositoriesResponse)-2])
+	gc := &GithubClient{
+		WebClient: tc,
+	}
+
+	repos := make(Repositories, 0, 1)
+	err := gc.ListRepositories("hailocab", &repos)
+	if err == nil {
+		t.Fatal("err = nil, want error")
+	}
+
+	expectedMsg := "unexpected EOF"
+	if err.Error() != expectedMsg {
+		t.Fatalf("err.Error() = %v, want %v", err.Error(), expectedMsg)
+	}
+}
+
+func Test_ListRepositories_with_single_valid_json_response_should_return_repository_list(t *testing.T) {
+	tc := newClient()
+	tc.responses = append(tc.responses, validRepositoriesResponse)
+	gc := &GithubClient{
+		WebClient: tc,
+	}
+
+	repos := make(Repositories, 0, 1)
+	err := gc.ListRepositories("hailocab", &repos)
+	if err != nil {
+		t.Fatalf("err = %v, want nil", err)
+	}
+
+	expectedLen := 1
+	if len(repos) != expectedLen {
+		t.Fatalf("len(repos) = %v, want %v", len(repos), expectedLen)
+	}
+
+	expectedName := "octocat/Hello-World"
+	if repos[0].FullName != expectedName {
+		t.Fatalf(".FullName = %v, want %v", repos[0].FullName, expectedName)
 	}
 }
