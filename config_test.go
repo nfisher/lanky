@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 const validJson = `{
@@ -79,5 +80,28 @@ func Test_TrayFeedUrl_returns_empty_if_Jenkins_is_nil(t *testing.T) {
 
 	if c.TrayFeedUrl() != "" {
 		t.Fatalf("c.TrayFeedUrl() = %v, want \"\"", c.TrayFeedUrl())
+	}
+}
+
+func Test_TrayFeedUrl_returns_url(t *testing.T) {
+	c := &Config{
+		Jenkins: &Jenkins{
+			BaseUrl:  "http://ci.local",
+			TrayFeed: "/cc.xml",
+		},
+	}
+
+	expected := "http://ci.local/cc.xml"
+	if c.TrayFeedUrl() != expected {
+		t.Fatalf("c.TrayFeedUrl() = %v, want %v", c.TrayFeedUrl(), expected)
+	}
+}
+
+func Test_ClientTimeout(t *testing.T) {
+	c := &Config{}
+
+	expected := time.Duration(5 * time.Second)
+	if c.ClientTimeout() != expected {
+		t.Fatalf("c.ClientTimeout() = %v, want %v", c.ClientTimeout(), expected)
 	}
 }

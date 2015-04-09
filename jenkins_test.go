@@ -32,3 +32,86 @@ func Test_reads_valid_cctray_feed(t *testing.T) {
 		t.Fatalf("p.Project[0].LastBuildTime = %v, want %v", p.Project[0].LastBuildTime, expectTime)
 	}
 }
+
+func Test_TrayFeed_with_connection_error_should_return_error(t *testing.T) {
+	c := &Config{
+		Jenkins: &Jenkins{
+			BaseUrl:  "http://ci.local",
+			TrayFeed: "/cc.xml",
+		},
+	}
+	tc := newClient()
+	j := &JenkinsClient{
+		c,
+		tc,
+	}
+
+	projects := &Projects{}
+	err := j.TrayFeed(projects, "date")
+	if err == nil {
+		t.Fatal("err = nil, want error")
+	}
+}
+
+func Test_TrayFeed_with_invalid_xml_should_return_error(t *testing.T) {
+	c := &Config{
+		Jenkins: &Jenkins{
+			BaseUrl:  "http://ci.local",
+			TrayFeed: "/cc.xml",
+		},
+	}
+	tc := newClient()
+	tc.responses = append(tc.responses, validTrayFeed[:len(validTrayFeed)-2])
+	j := &JenkinsClient{
+		c,
+		tc,
+	}
+
+	projects := &Projects{}
+	err := j.TrayFeed(projects, "date")
+	if err == nil {
+		t.Fatal("err = nil, want error")
+	}
+}
+
+var trayFeed = []struct {
+	order  string
+	byDate bool
+}{
+	{"date", true},
+	{"status", false},
+	{"boogie", false},
+}
+
+func Test_TrayFeed_with_valid_xml_should_populate_projects(t *testing.T) {
+	for _, tt := range trayFeed {
+		c := &Config{
+			Jenkins: &Jenkins{
+				BaseUrl:  "http://ci.local",
+				TrayFeed: "/cc.xml",
+			},
+		}
+		tc := newClient()
+		tc.responses = append(tc.responses, validTrayFeed)
+		j := &JenkinsClient{
+			c,
+			tc,
+		}
+
+		projects := &Projects{}
+		err := j.TrayFeed(projects, tt.order)
+		if err != nil {
+			t.Fatalf("err = %v, want nil", err)
+		}
+
+		expectedLen := 15
+		if projects.Len() != expectedLen {
+			t.Fatalf("projects.Len() = %v, want %v", projects.Len(), expectedLen)
+		}
+
+		expectedOrder := tt.byDate
+		if projects.ByDate() != expectedOrder {
+			t.Fatalf("projects.ByDate() = %v, want %v", projects.ByDate(), expectedOrder)
+		}
+	}
+}
