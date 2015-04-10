@@ -218,10 +218,13 @@ func rootHandler(w http.ResponseWriter, r *http.Request, config *Config) error {
 		return nil
 	}
 
-	p := &Projects{}
 	j := NewJenkins(config)
-	by := r.URL.Query().Get("by")
+	if j == nil {
+		return errors.New("Jenkins configuration is invalid.")
+	}
 
+	by := r.URL.Query().Get("by")
+	p := &Projects{}
 	err := j.TrayFeed(p, by)
 	if err != nil {
 		return err

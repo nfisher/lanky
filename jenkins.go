@@ -16,6 +16,10 @@ const (
 )
 
 func NewJenkins(config *Config) (client *JenkinsClient) {
+	if config.Jenkins == nil || config.Jenkins.BaseUrl == "" || config.Jenkins.TrayFeed == "" {
+		return nil
+	}
+
 	wc := &http.Client{
 		Timeout: config.ClientTimeout(),
 	}
