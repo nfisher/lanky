@@ -102,8 +102,11 @@ func (rs *RuntimeStats) TotalAlloc() string {
 }
 
 func (rs *RuntimeStats) Update() {
+	c := &runtime.MemStats{}
+	runtime.ReadMemStats(c)
+
 	rs.Lock()
-	runtime.ReadMemStats(rs.memStats)
+	rs.memStats = c
 	rs.Unlock()
 }
 

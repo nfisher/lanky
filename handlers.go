@@ -187,7 +187,7 @@ ul a {
 </head>
 <body>
 <h1>Lanky</h1>
-<p>{{.Len}} respositories.</p>
+<p>{{.Len}} repositories.</p>
 <ul>
 {{range .}}
 <li>{{.FullName}}
@@ -202,9 +202,12 @@ var repositoryTemplate = template.Must(template.New("repository").Parse(reposito
 
 func statusHandler(w http.ResponseWriter, r *http.Request, config *Config, stats *RuntimeStats) error {
 	stats.Update()
+
+	// lock all of the reads to ensure a consistent point in time measurement
 	stats.RLock()
 	err := statusTemplate.Execute(w, stats)
 	stats.RUnlock()
+
 	if err != nil {
 		return err
 	}
@@ -238,8 +241,9 @@ func rootHandler(w http.ResponseWriter, r *http.Request, config *Config) error {
 	return nil
 }
 
-func builderHandler(w http.ResponseWriter, r *http.Request, config *Config) {
+func builderHandler(w http.ResponseWriter, r *http.Request, config *Config) (err error) {
 	http.Error(w, "Not implemented yet", http.StatusInternalServerError)
+	return
 }
 
 func sign(payload []byte, key string) []byte {
@@ -248,7 +252,7 @@ func sign(payload []byte, key string) []byte {
 	return mac.Sum(nil)
 }
 
-func githubHandler(w http.ResponseWriter, r *http.Request, config *Config) {
+func githubHandler(w http.ResponseWriter, r *http.Request, config *Config) (err error) {
 	if r.Method != "POST" {
 		http.Error(w, "Unauthorized", http.StatusMethodNotAllowed)
 		return
@@ -298,8 +302,9 @@ func githubHandler(w http.ResponseWriter, r *http.Request, config *Config) {
 	return
 }
 
-func hubotHandler(w http.ResponseWriter, r *http.Request, config *Config) {
+func hubotHandler(w http.ResponseWriter, r *http.Request, config *Config) (err error) {
 	http.Error(w, "Not implemented yet", http.StatusInternalServerError)
+	return
 }
 
 var repos *Repositories = new(Repositories)
@@ -308,6 +313,11 @@ var reposSync sync.Mutex
 var reposSwap sync.RWMutex
 
 func repositoryHandler(w http.ResponseWriter, r *http.Request, config *Config) (err error) {
+	if r.Method != "GET" {
+		http.Error(w, "Unauthorized", http.StatusMethodNotAllowed)
+		return
+	}
+
 	cl := NewGithub(config)
 	if cl == nil {
 		return errors.New("Github configuration is invalid.")
@@ -317,8 +327,10 @@ func repositoryHandler(w http.ResponseWriter, r *http.Request, config *Config) (
 		reposSync.Lock()
 		defer reposSync.Unlock()
 		now := time.Now()
+		isAfter := now.After(lastUpdated.Add(5 * time.Minute))
+
 		reps := make(Repositories, 0, 100)
-		if now.After(lastUpdated.Add(5 * time.Minute)) {
+		if isAfter {
 			err = cl.ListRepositories(config.Github.Organization, &reps)
 			if err != nil {
 				return err

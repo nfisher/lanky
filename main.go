@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"os"
 
 	"github.com/golang/glog"
@@ -26,5 +27,15 @@ func main() {
 		glog.Fatalf("Error reading config file %v: %v", configPath, err)
 	}
 
-	Serve(config)
+	stats := NewStats()
+
+	RegisterRoutes(config, stats)
+
+	handler := &LoggingHandler{http.DefaultServeMux, stats}
+	address := config.Address
+	cert := config.CertificatePath
+	key := config.KeyPath
+
+	glog.Warningf("Starting server listening at %v.", config.Address)
+	glog.Fatal(ListenAndServe(address, cert, key, handler))
 }

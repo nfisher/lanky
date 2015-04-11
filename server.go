@@ -46,50 +46,32 @@ func (lh *LoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	glog.Infof("%v %v - \"%v %v %v\" %v %v", ip, r.Header.Get("User-Agent"), r.Method, r.URL.Path, r.Proto, bw.Status, bw.Wrote)
 }
 
-func Serve(config *Config) {
+func HandleFuncConfig(path string, fn func(w http.ResponseWriter, r *http.Request, c *Config) error, c *Config) {
+	http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		err := fn(w, r, c)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+}
+
+func RegisterRoutes(config *Config, stats *RuntimeStats) {
 	// GitHub Post-Receive requests
-	http.HandleFunc("/_github", func(w http.ResponseWriter, r *http.Request) {
-		githubHandler(w, r, config)
-	})
-
+	HandleFuncConfig("/_github", githubHandler, config)
 	// Hubot API
-	http.HandleFunc("/_hubot", func(w http.ResponseWriter, r *http.Request) {
-		hubotHandler(w, r, config)
-	})
-
+	HandleFuncConfig("/_hubot", hubotHandler, config)
 	// Jenkins callback
-	http.HandleFunc("/_builder", func(w http.ResponseWriter, r *http.Request) {
-		builderHandler(w, r, config)
-	})
+	HandleFuncConfig("/_builder", builderHandler, config)
 
-	// landing page
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		err := rootHandler(w, r, config)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	})
-
-	http.HandleFunc("/repositories", func(w http.ResponseWriter, r *http.Request) {
-		err := repositoryHandler(w, r, config)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	})
-
-	stats := NewStats()
+	// Organisations repository listing
+	HandleFuncConfig("/repositories", repositoryHandler, config)
 
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		statusHandler(w, r, config, stats)
 	})
 
-	handler := &LoggingHandler{http.DefaultServeMux, stats}
-	address := config.Address
-	cert := config.CertificatePath
-	key := config.KeyPath
-
-	glog.Warningf("Starting server listening at %v.", config.Address)
-	glog.Fatal(ListenAndServe(address, cert, key, handler))
+	// landing page
+	HandleFuncConfig("/", rootHandler, config)
 }
 
 func ListenAndServe(address, cert, key string, handler http.Handler) (err error) {

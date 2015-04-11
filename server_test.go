@@ -19,3 +19,6 @@ func Test_ensure_WriteHeader_writes_to_embedded_struct(t *testing.T) {
 		t.Fatalf("rec.Code = %v, want %v", rec.Code, expectedCode)
 	}
 }
+
+func Test_RegisterRoutes_should_map_expected_routes(t *testing.T) {
+}
